@@ -107,6 +107,28 @@ param (
     [string[]]$customwhitelist
 )
 
+$customwhitelist = @(
+    'Microsoft.MicrosoftStickyNotes',
+    'Microsoft.Paint',
+    'Microsoft.PowerAutomateDesktop',
+    'Microsoft.RawImageExtension',
+    'Microsoft.Todos',
+    'Microsoft.WinAppRuntime.DDLM.5001.70.1338.0-x6',
+    'Microsoft.WinAppRuntime.DDLM.5001.70.1338.0-x8',
+    'Microsoft.WindowsAlarms',
+    'Microsoft.Windows.Ai.Copilot.Provider',
+    'Microsoft.Windows.DevHome',
+    'Microsoft.WindowsTerminal',
+    'Microsoft.Windows.DevHome',
+    'MicrosoftCorporationII.WinAppRuntime.Main.1.5',
+    'MicrosoftCorporationII.WinAppRuntime.Singleton',
+    'MicrosoftTeams',
+    'MicrosoftWindows.Client.WebExperience',
+    'MicrosoftWindows.CrossDevice',
+    'Microsoft.Windows.ParentalControls', # führt zu Fehlermeldung beim deinstallieren
+    'Microsoft.XboxGameCallableUI'  # führt zu Fehlermeldung beim deinstallieren
+)
+
 ##Elevate if needed
 
 If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
@@ -379,42 +401,42 @@ switch ($locale) {
     $appstoignore = $WhitelistedApps += $NonRemovable
 
 
-    $provisioned = Get-AppxProvisionedPackage -Online | Where-Object {$_.DisplayName -notin $appstoignore}
-    foreach ($appxprov in $provisioned) {
-        $packagename = $appxprov.PackageName
-        $displayname = $appxprov.DisplayName
-        write-host "Removing $displayname AppX Provisioning Package"
-        try {
-            Remove-AppxProvisionedPackage -PackageName $packagename -Online -WhatIf
-        }
-        catch {
+    # $provisioned = Get-AppxProvisionedPackage -Online | Where-Object {$_.DisplayName -notin $appstoignore}
+    # foreach ($appxprov in $provisioned) {
+    #     $packagename = $appxprov.PackageName
+    #     $displayname = $appxprov.DisplayName
+    #     write-host "Removing $displayname AppX Provisioning Package"
+    #     try {
+    #         Remove-AppxProvisionedPackage -PackageName $packagename -Online -WhatIf
+    #     }
+    #     catch {
             
-        }
-        write-host "Removed $displayname AppX Provisioning Package"
-    }
+    #     }
+    #     write-host "Removed $displayname AppX Provisioning Package"
+    # }
 
 
-    $appxinstalled = Get-AppxPackage -AllUsers | Where-Object {$_.Name -notin $appstoignore}
-    foreach ($appxapp in $appxinstalled) {
-        $packagename = $appxapp.PackageFullName
-        $displayname = $appxapp.Name
-        ##Check if exists first
-        if (Get-AppxPackage -Name $packagename -ErrorAction SilentlyContinue) {
-            write-host "$displayname AppX Package exists"
-            write-host "Removing $displayname AppX Package"
-            try {
-                Remove-AppxPackage -Package $packagename -AllUsers -WhatIf
-            }
-            catch {
+    # $appxinstalled = Get-AppxPackage -AllUsers | Where-Object {$_.Name -notin $appstoignore}
+    # foreach ($appxapp in $appxinstalled) {
+    #     $packagename = $appxapp.PackageFullName
+    #     $displayname = $appxapp.Name
+    #     ##Check if exists first
+    #     if (Get-AppxPackage -Name $packagename -ErrorAction SilentlyContinue) {
+    #         write-host "$displayname AppX Package exists"
+    #         write-host "Removing $displayname AppX Package"
+    #         try {
+    #             Remove-AppxPackage -Package $packagename -AllUsers -WhatIf
+    #         }
+    #         catch {
                 
-            }
-            write-host "Removed $displayname AppX Package"
-        } else {
-            write-host "$displayname AppX Package does not exist"
-            # Skip the removal process
-        }
+    #         }
+    #         write-host "Removed $displayname AppX Package"
+    #     } else {
+    #         write-host "$displayname AppX Package does not exist"
+    #         # Skip the removal process
+    #     }
 
-    }
+    # }
     
 
 
@@ -437,11 +459,11 @@ $Bloatware = @(
     "Microsoft.Office.Sway"
     "Microsoft.OneConnect"
     "Microsoft.People"
-    "Microsoft.Print3D"
+    #"Microsoft.Print3D"
     "Microsoft.RemoteDesktop"
     "Microsoft.SkypeApp"
     "Microsoft.StorePurchaseApp"
-    "Microsoft.Office.Todo.List"
+    #"Microsoft.Office.Todo.List"
     "Microsoft.Whiteboard"
     "Microsoft.WindowsAlarms"
     #"Microsoft.WindowsCamera"
@@ -454,15 +476,15 @@ $Bloatware = @(
     "Microsoft.XboxGameOverlay"
     "Microsoft.XboxIdentityProvider"
     "Microsoft.XboxSpeechToTextOverlay"
-    "Microsoft.ZuneMusic"
-    "Microsoft.ZuneVideo"
-    "MicrosoftTeams"
-    "Microsoft.YourPhone"
+    #"Microsoft.ZuneMusic"
+    #"Microsoft.ZuneVideo"
+    #"MicrosoftTeams"
+    #"Microsoft.YourPhone"
     "Microsoft.XboxGamingOverlay_5.721.10202.0_neutral_~_8wekyb3d8bbwe"
     "Microsoft.GamingApp"
-    "Microsoft.Todos"
-    "Microsoft.PowerAutomateDesktop"
-    "SpotifyAB.SpotifyMusic"
+    #"Microsoft.Todos"
+    #"Microsoft.PowerAutomateDesktop"
+    #"SpotifyAB.SpotifyMusic"
     "Microsoft.MicrosoftJournal"
     "Disney.37853FC22B2CE"
     "*EclipseManager*"
@@ -474,21 +496,21 @@ $Bloatware = @(
     "*BubbleWitch3Saga*"
     "*Wunderlist*"
     "*Flipboard*"
-    "*Twitter*"
-    "*Facebook*"
-    "*Spotify*"
+    #"*Twitter*"
+    #"*Facebook*"
+    #"*Spotify*"
     "*Minecraft*"
     "*Royal Revolt*"
     "*Sway*"
     "*Speed Test*"
     "*Dolby*"
-    "*Office*"
+    #"*Office*"
     "*Disney*"
     "clipchamp.clipchamp"
     "*gaming*"
     "MicrosoftCorporationII.MicrosoftFamily"
     "C27EB4BA.DropboxOEM*"
-    "*DevHome*"
+    #"*DevHome*"
     "MicrosoftCorporationII.QuickAssist"
     #Optional: Typically not removed but you can if you need to for some reason
     #"*Microsoft.Advertising.Xaml_10.1712.5.0_x64__8wekyb3d8bbwe*"
@@ -510,14 +532,14 @@ if ($customwhitelist) {
     foreach ($Bloat in $Bloatware) {
         
         if (Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $Bloat -ErrorAction SilentlyContinue) {
-            Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $Bloat | Remove-AppxProvisionedPackage -Online -WhatIf
+            Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $Bloat | Remove-AppxProvisionedPackage -Online
             Write-Host "Removed provisioned package for $Bloat."
         } else {
             Write-Host "Provisioned package for $Bloat not found."
         }
 
         if (Get-AppxPackage -Name $Bloat -ErrorAction SilentlyContinue) {
-            Get-AppxPackage -allusers -Name $Bloat | Remove-AppxPackage -AllUsers -WhatIf
+            Get-AppxPackage -allusers -Name $Bloat | Remove-AppxPackage -AllUsers
             Write-Host "Removed $Bloat."
         } else {
             Write-Host "$Bloat not found."
@@ -575,7 +597,7 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     #This writes the output of each key it is removing and also removes the keys listed above.
     ForEach ($Key in $Keys) {
         Write-Host "Removing $Key from registry"
-        Remove-Item $Key -Recurse -WhatIf
+        Remove-Item $Key -Recurse
     }
 
 
@@ -586,7 +608,7 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         New-Item $Advertising
     }
     If (Test-Path $Advertising) {
-        Set-ItemProperty $Advertising Enabled -Value 0 -WhatIf
+        Set-ItemProperty $Advertising Enabled -Value 0
     }
             
     #Stops Cortana from being used as part of your Windows Search Function
@@ -596,7 +618,7 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         New-Item $Search
     }
     If (Test-Path $Search) {
-        Set-ItemProperty $Search AllowCortana -Value 0 -WhatIf
+        Set-ItemProperty $Search AllowCortana -Value 0
     }
 
     #Disables Web Search in Start Menu
@@ -612,10 +634,10 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         If (!(Test-Path $WebSearch)) {
             New-Item $WebSearch
         }
-        Set-ItemProperty $WebSearch BingSearchEnabled -Value 0 -WhatIf
+        Set-ItemProperty $WebSearch BingSearchEnabled -Value 0
     }
     
-    Set-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" BingSearchEnabled -Value 0 -WhatIf
+    Set-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" BingSearchEnabled -Value 0
 
             
     #Stops the Windows Feedback Experience from sending anonymous data
@@ -624,7 +646,7 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     If (!(Test-Path $Period)) { 
         New-Item $Period
     }
-    Set-ItemProperty $Period PeriodInNanoSeconds -Value 0 -WhatIf
+    Set-ItemProperty $Period PeriodInNanoSeconds -Value 0
 
     ##Loop and do the same
     foreach ($sid in $UserSIDs) {
@@ -632,7 +654,7 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         If (!(Test-Path $Period)) { 
             New-Item $Period
         }
-        Set-ItemProperty $Period PeriodInNanoSeconds -Value 0 -WhatIf
+        Set-ItemProperty $Period PeriodInNanoSeconds -Value 0
     }
 
     #Prevents bloatware applications from returning and removes Start Menu suggestions               
@@ -642,17 +664,17 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     If (!(Test-Path $registryPath)) { 
         New-Item $registryPath
     }
-    Set-ItemProperty $registryPath DisableWindowsConsumerFeatures -Value 1 -WhatIf
+    Set-ItemProperty $registryPath DisableWindowsConsumerFeatures -Value 1
 
     If (!(Test-Path $registryOEM)) {
         New-Item $registryOEM
     }
-    Set-ItemProperty $registryOEM  ContentDeliveryAllowed -Value 0  -WhatIf
-    Set-ItemProperty $registryOEM  OemPreInstalledAppsEnabled -Value 0  -WhatIf
-    Set-ItemProperty $registryOEM  PreInstalledAppsEnabled -Value 0 -WhatIf
-    Set-ItemProperty $registryOEM  PreInstalledAppsEverEnabled -Value 0 -WhatIf
-    Set-ItemProperty $registryOEM  SilentInstalledAppsEnabled -Value 0 -WhatIf
-    Set-ItemProperty $registryOEM  SystemPaneSuggestionsEnabled -Value 0  -WhatIf
+    #Set-ItemProperty $registryOEM  ContentDeliveryAllowed -Value 0
+    Set-ItemProperty $registryOEM  OemPreInstalledAppsEnabled -Value 0
+    Set-ItemProperty $registryOEM  PreInstalledAppsEnabled -Value 0
+    Set-ItemProperty $registryOEM  PreInstalledAppsEverEnabled -Value 0
+    Set-ItemProperty $registryOEM  SilentInstalledAppsEnabled -Value 0
+    Set-ItemProperty $registryOEM  SystemPaneSuggestionsEnabled -Value 0
     
     ##Loop through users and do the same
     foreach ($sid in $UserSIDs) {
@@ -660,26 +682,26 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         If (!(Test-Path $registryOEM)) {
             New-Item $registryOEM
         }
-        Set-ItemProperty $registryOEM  ContentDeliveryAllowed -Value 0 -WhatIf
-        Set-ItemProperty $registryOEM  OemPreInstalledAppsEnabled -Value 0 -WhatIf
-        Set-ItemProperty $registryOEM  PreInstalledAppsEnabled -Value 0 -WhatIf
-        Set-ItemProperty $registryOEM  PreInstalledAppsEverEnabled -Value 0 -WhatIf
-        Set-ItemProperty $registryOEM  SilentInstalledAppsEnabled -Value 0 -WhatIf
-        Set-ItemProperty $registryOEM  SystemPaneSuggestionsEnabled -Value 0 -WhatIf
+        #Set-ItemProperty $registryOEM  ContentDeliveryAllowed -Value 0
+        Set-ItemProperty $registryOEM  OemPreInstalledAppsEnabled -Value 0
+        Set-ItemProperty $registryOEM  PreInstalledAppsEnabled -Value 0
+        Set-ItemProperty $registryOEM  PreInstalledAppsEverEnabled -Value 0
+        Set-ItemProperty $registryOEM  SilentInstalledAppsEnabled -Value 0
+        Set-ItemProperty $registryOEM  SystemPaneSuggestionsEnabled -Value 0
     }
     
     #Preping mixed Reality Portal for removal    
     Write-Host "Setting Mixed Reality Portal value to 0 so that you can uninstall it in Settings"
     $Holo = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Holographic"    
     If (Test-Path $Holo) {
-        Set-ItemProperty $Holo  FirstRunSucceeded -Value 0 -WhatIf
+        Set-ItemProperty $Holo  FirstRunSucceeded -Value 0
     }
 
     ##Loop through users and do the same
     foreach ($sid in $UserSIDs) {
         $Holo = "Registry::HKU\$sid\Software\Microsoft\Windows\CurrentVersion\Holographic"    
         If (Test-Path $Holo) {
-            Set-ItemProperty $Holo  FirstRunSucceeded -Value 0 -WhatIf
+            Set-ItemProperty $Holo  FirstRunSucceeded -Value 0
         }
     }
 
@@ -691,29 +713,29 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     If (!(Test-Path $WifiSense1)) {
         New-Item $WifiSense1
     }
-    Set-ItemProperty $WifiSense1  Value -Value 0 -WhatIf
+    Set-ItemProperty $WifiSense1  Value -Value 0
     If (!(Test-Path $WifiSense2)) {
         New-Item $WifiSense2
     }
-    Set-ItemProperty $WifiSense2  Value -Value 0 -WhatIf
-    Set-ItemProperty $WifiSense3  AutoConnectAllowedOEM -Value 0 -WhatIf
+    Set-ItemProperty $WifiSense2  Value -Value 0
+    Set-ItemProperty $WifiSense3  AutoConnectAllowedOEM -Value 0
         
-    #Disables live tiles
-    Write-Host "Disabling live tiles"
-    $Live = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications"    
-    If (!(Test-Path $Live)) {      
-        New-Item $Live
-    }
-    Set-ItemProperty $Live  NoTileApplicationNotification -Value 1 -WhatIf
+    # #Disables live tiles
+    # Write-Host "Disabling live tiles"
+    # $Live = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications"    
+    # If (!(Test-Path $Live)) {      
+    #     New-Item $Live
+    # }
+    # Set-ItemProperty $Live  NoTileApplicationNotification -Value 1
 
-    ##Loop through users and do the same
-    foreach ($sid in $UserSIDs) {
-        $Live = "Registry::HKU\$sid\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications"    
-        If (!(Test-Path $Live)) {      
-            New-Item $Live
-        }
-        Set-ItemProperty $Live  NoTileApplicationNotification -Value 1 -WhatIf
-    }
+    # ##Loop through users and do the same
+    # foreach ($sid in $UserSIDs) {
+    #     $Live = "Registry::HKU\$sid\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications"    
+    #     If (!(Test-Path $Live)) {      
+    #         New-Item $Live
+    #     }
+    #     Set-ItemProperty $Live  NoTileApplicationNotification -Value 1 -WhatIf
+    # }
         
     #Turns off Data Collection via the AllowTelemtry key by changing it to 0
     # This is needed for Intune reporting to work, uncomment if using via other method
@@ -751,14 +773,14 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     Write-Host "Disabling People icon on Taskbar"
     $People = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People'
     If (Test-Path $People) {
-        Set-ItemProperty $People -Name PeopleBand -Value 0 -WhatIf
+        Set-ItemProperty $People -Name PeopleBand -Value 0
     }
 
     ##Loop through users and do the same
     foreach ($sid in $UserSIDs) {
         $People = "Registry::HKU\$sid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People"
         If (Test-Path $People) {
-            Set-ItemProperty $People -Name PeopleBand -Value 0 -WhatIf
+            Set-ItemProperty $People -Name PeopleBand -Value 0
         }
     }
 
@@ -769,16 +791,16 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     If (!(Test-Path $Cortana1)) {
         New-Item $Cortana1
     }
-    Set-ItemProperty $Cortana1 AcceptedPrivacyPolicy -Value 0 -WhatIf
+    Set-ItemProperty $Cortana1 AcceptedPrivacyPolicy -Value 0
     If (!(Test-Path $Cortana2)) {
         New-Item $Cortana2
     }
-    Set-ItemProperty $Cortana2 RestrictImplicitTextCollection -Value 1 -WhatIf
-    Set-ItemProperty $Cortana2 RestrictImplicitInkCollection -Value 1 -WhatIf
+    Set-ItemProperty $Cortana2 RestrictImplicitTextCollection -Value 1
+    Set-ItemProperty $Cortana2 RestrictImplicitInkCollection -Value 1
     If (!(Test-Path $Cortana3)) {
         New-Item $Cortana3
     }
-    Set-ItemProperty $Cortana3 HarvestContacts -Value 0 -WhatIf
+    Set-ItemProperty $Cortana3 HarvestContacts -Value 0
 
     ##Loop through users and do the same
     foreach ($sid in $UserSIDs) {
@@ -788,16 +810,16 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
         If (!(Test-Path $Cortana1)) {
             New-Item $Cortana1
         }
-        Set-ItemProperty $Cortana1 AcceptedPrivacyPolicy -Value 0 -WhatIf
+        Set-ItemProperty $Cortana1 AcceptedPrivacyPolicy -Value 0
         If (!(Test-Path $Cortana2)) {
             New-Item $Cortana2
         }
-        Set-ItemProperty $Cortana2 RestrictImplicitTextCollection -Value 1 -WhatIf
-        Set-ItemProperty $Cortana2 RestrictImplicitInkCollection -Value 1 -WhatIf
+        Set-ItemProperty $Cortana2 RestrictImplicitTextCollection -Value 1
+        Set-ItemProperty $Cortana2 RestrictImplicitInkCollection -Value 1
         If (!(Test-Path $Cortana3)) {
             New-Item $Cortana3
         }
-        Set-ItemProperty $Cortana3 HarvestContacts -Value 0 -WhatIf
+        Set-ItemProperty $Cortana3 HarvestContacts -Value 0
     }
 
 
@@ -806,10 +828,10 @@ $UserSIDs = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Pr
     $Objects32 = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"
     $Objects64 = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"
     If (Test-Path $Objects32) {
-        Remove-Item $Objects32 -Recurse -WhatIf
+        Remove-Item $Objects32 -Recurse
     }
     If (Test-Path $Objects64) {
-        Remove-Item $Objects64 -Recurse -WhatIf
+        Remove-Item $Objects64 -Recurse
     }
 
    
@@ -820,29 +842,29 @@ $value = "0"
 
 if (!(Test-Path $registryPath)) {
     New-Item -Path $registryPath -Force | Out-Null
-    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force -WhatIf | Out-Null
+    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
 }
 
 else {
-    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force -WhatIf | Out-Null
+    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
 }
 
 ##Kill Cortana again
-Get-AppxPackage - allusers Microsoft.549981C3F5F10 | Remove AppxPackage -WhatIf
+Get-AppxPackage - allusers Microsoft.549981C3F5F10 | Remove AppxPackage
 
 
     #Turn off Learn about this picture
     Write-Host "Disabling Learn about this picture"
     $picture = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel'
     If (Test-Path $picture) {
-        Set-ItemProperty $picture -Name "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" -Value 1 -WhatIf
+        Set-ItemProperty $picture -Name "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" -Value 1
     }
 
     ##Loop through users and do the same
     foreach ($sid in $UserSIDs) {
         $picture = "Registry::HKU\$sid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"
         If (Test-Path $picture) {
-            Set-ItemProperty $picture -Name "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" -Value 1 -WhatIf
+            Set-ItemProperty $picture -Name "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" -Value 1
         }
     }
     
@@ -851,32 +873,32 @@ Get-AppxPackage - allusers Microsoft.549981C3F5F10 | Remove AppxPackage -WhatIf
 #                                                                                                          #
 ############################################################################################################
 
-    #Disables scheduled tasks that are considered unnecessary 
-    Write-Host "Disabling scheduled tasks"
-    $task1 = Get-ScheduledTask -TaskName XblGameSaveTaskLogon -ErrorAction SilentlyContinue
-    if ($null -ne $task1) {
-    Get-ScheduledTask  XblGameSaveTaskLogon | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
-    $task2 = Get-ScheduledTask -TaskName XblGameSaveTask -ErrorAction SilentlyContinue
-    if ($null -ne $task2) {
-    Get-ScheduledTask  XblGameSaveTask | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
-    $task3 = Get-ScheduledTask -TaskName Consolidator -ErrorAction SilentlyContinue
-    if ($null -ne $task3) {
-    Get-ScheduledTask  Consolidator | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
-    $task4 = Get-ScheduledTask -TaskName UsbCeip -ErrorAction SilentlyContinue
-    if ($null -ne $task4) {
-    Get-ScheduledTask  UsbCeip | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
-    $task5 = Get-ScheduledTask -TaskName DmClient -ErrorAction SilentlyContinue
-    if ($null -ne $task5) {
-    Get-ScheduledTask  DmClient | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
-    $task6 = Get-ScheduledTask -TaskName DmClientOnScenarioDownload -ErrorAction SilentlyContinue
-    if ($null -ne $task6) {
-    Get-ScheduledTask  DmClientOnScenarioDownload | Disable-ScheduledTask -ErrorAction SilentlyContinue -WhatIf
-    }
+    # #Disables scheduled tasks that are considered unnecessary 
+    # Write-Host "Disabling scheduled tasks"
+    # $task1 = Get-ScheduledTask -TaskName XblGameSaveTaskLogon -ErrorAction SilentlyContinue
+    # if ($null -ne $task1) {
+    # Get-ScheduledTask  XblGameSaveTaskLogon | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
+    # $task2 = Get-ScheduledTask -TaskName XblGameSaveTask -ErrorAction SilentlyContinue
+    # if ($null -ne $task2) {
+    # Get-ScheduledTask  XblGameSaveTask | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
+    # $task3 = Get-ScheduledTask -TaskName Consolidator -ErrorAction SilentlyContinue
+    # if ($null -ne $task3) {
+    # Get-ScheduledTask  Consolidator | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
+    # $task4 = Get-ScheduledTask -TaskName UsbCeip -ErrorAction SilentlyContinue
+    # if ($null -ne $task4) {
+    # Get-ScheduledTask  UsbCeip | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
+    # $task5 = Get-ScheduledTask -TaskName DmClient -ErrorAction SilentlyContinue
+    # if ($null -ne $task5) {
+    # Get-ScheduledTask  DmClient | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
+    # $task6 = Get-ScheduledTask -TaskName DmClientOnScenarioDownload -ErrorAction SilentlyContinue
+    # if ($null -ne $task6) {
+    # Get-ScheduledTask  DmClientOnScenarioDownload | Disable-ScheduledTask -ErrorAction SilentlyContinue
+    # }
 
 
 ############################################################################################################
@@ -914,7 +936,7 @@ if ($customwhitelist) {
     foreach ($package in $packages) {
         $appPackage = Get-AppxPackage -allusers $package -ErrorAction SilentlyContinue
         if ($appPackage) {
-            Remove-AppxPackage -Package $appPackage.PackageFullName -AllUsers -WhatIf
+            Remove-AppxPackage -Package $appPackage.PackageFullName -AllUsers
             Write-Host "Removed $package"
         }
     }
@@ -926,12 +948,12 @@ $WinPackage = Get-AppxPackage -allusers | Where-Object {$_.Name -eq $MSTeams}
 $ProvisionedPackage = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $WinPackage }
 If ($null -ne $WinPackage) 
 {
-    Remove-AppxPackage  -Package $WinPackage.PackageFullName -AllUsers -WhatIf
+    Remove-AppxPackage  -Package $WinPackage.PackageFullName -AllUsers
 } 
 
 If ($null -ne $ProvisionedPackage) 
 {
-    Remove-AppxProvisionedPackage -online -Packagename $ProvisionedPackage.Packagename -AllUsers -WhatIf
+    Remove-AppxProvisionedPackage -online -Packagename $ProvisionedPackage.Packagename -AllUsers
 }
 
 ##Tweak reg permissions
@@ -945,7 +967,7 @@ $registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications"
 If (!(Test-Path $registryPath)) { 
     New-Item $registryPath
 }
-Set-ItemProperty $registryPath ConfigureChatAutoInstall -Value 0 -WhatIf
+Set-ItemProperty $registryPath ConfigureChatAutoInstall -Value 0
 
 
 ##Unpin it
@@ -953,7 +975,7 @@ $registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Chat"
 If (!(Test-Path $registryPath)) { 
     New-Item $registryPath
 }
-Set-ItemProperty $registryPath "ChatIcon" -Value 2 -WhatIf
+Set-ItemProperty $registryPath "ChatIcon" -Value 2
 write-host "Removed Teams Chat"
 
 
@@ -962,7 +984,7 @@ $registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
 If (!(Test-Path $registryPath)) { 
     New-Item $registryPath
 }
-Set-ItemProperty $registryPath "AllowNewsAndInterests" -Value 0 -WhatIf
+Set-ItemProperty $registryPath "AllowNewsAndInterests" -Value 0
 write-host "Disabled Feeds"
 
 ############################################################################################################
