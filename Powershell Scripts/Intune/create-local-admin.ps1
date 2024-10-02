@@ -226,7 +226,7 @@ $usercreate = New-MgUser -DisplayName $Name -PasswordProfile $PasswordProfile -U
 ####################################################
 
 ##Configure the JSON
-$initialjson="https://raw.githubusercontent.com/andrew-s-taylor/public/main/Powershell%20Scripts/Intune/localadminpolicy.json"
+$initialjson="https://raw.githubusercontent.com/mpejga/andrew-s-taylor-public/deployment/Powershell%20Scripts/Intune/localadminpolicy.json"
 $jsonpath = $env:Temp+"\intuneadmin.json"
 
 # Download config

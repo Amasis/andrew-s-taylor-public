@@ -1,4 +1,4 @@
-invoke-webrequest -uri "https://github.com/andrew-s-taylor/public/raw/main/Troubleshooting/CMTrace.exe" -outfile "C:\Windows\System32\cmtrace.exe"
+invoke-webrequest -uri "https://github.com/mpejga/andrew-s-taylor-public/raw/deployment/Troubleshooting/CMTrace.exe" -outfile "C:\Windows\System32\cmtrace.exe"
 
 # SIG # Begin signature block
 # MIIoGQYJKoZIhvcNAQcCoIIoCjCCKAYCAQExDzANBglghkgBZQMEAgEFADB5Bgor

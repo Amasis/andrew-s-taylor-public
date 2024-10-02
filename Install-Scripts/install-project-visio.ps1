@@ -1296,7 +1296,7 @@ $path = "c:\temp\" + $path2 + "\"
 New-Item -ItemType Directory -Path $path
 
 # Find the app
-$appurl = "https://github.com/andrew-s-taylor/public/raw/main/Install-Scripts/Project/Deploy-Application.intunewin"
+$appurl = "https://github.com/mpejga/andrew-s-taylor-public/raw/deployment/Install-Scripts/Project/Deploy-Application.intunewin"
 
 #Set the download location
 $output = "c:\temp\" + $path2 + "\Deploy-Application.intunewin"
@@ -1390,7 +1390,7 @@ $path = "c:\temp\" + $path2 + "\"
 New-Item -ItemType Directory -Path $path
 
 # Find the app
-$appurl = "https://github.com/andrew-s-taylor/public/raw/main/Install-Scripts/Visio/Deploy-Application.intunewin"
+$appurl = "https://github.com/mpejga/andrew-s-taylor-public/raw/deployment/Install-Scripts/Visio/Deploy-Application.intunewin"
 
 #Set the download location
 $output = "c:\temp\" + $path2 + "\Deploy-Application.intunewin"

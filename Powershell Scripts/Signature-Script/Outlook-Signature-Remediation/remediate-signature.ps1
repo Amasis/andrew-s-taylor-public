@@ -39,7 +39,7 @@ N/A
 #################################################### EDIT THESE SETTINGS ####################################################
 
 #Custom variables
-$templateurl = "https://github.com/andrew-s-taylor/public/raw/main/Powershell%20Scripts/Signature-Script/template.docx"
+$templateurl = "https://github.com/mpejga/andrew-s-taylor-public/raw/deployment/Powershell%20Scripts/Signature-Script/template.docx"
 $SignatureName = 'CompanyName' #insert the company name (no spaces) - could be signature name if more than one sig needed
 $SignatureVersion = "1" #Change this if you have updated the signature. If you do not change it, the script will quit after checking for the version already on the machine
 $ForceSignature = '0' #Set to 1 if you don't want the users to be able to change signature in Outlook

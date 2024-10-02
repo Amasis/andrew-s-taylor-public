@@ -452,7 +452,7 @@ if ($liveversion -ne $currentversion) {
 write-host "Script has been updated, please download the latest version from $liveuri" -ForegroundColor Red
 }
 }
-Get-ScriptVersion -liveuri "https://raw.githubusercontent.com/andrew-s-taylor/public/main/Powershell%20Scripts/Intune/automate-w10-w11-devicegroups.ps1"
+Get-ScriptVersion -liveuri "https://raw.githubusercontent.com/mpejga/andrew-s-taylor-public/deployment/Powershell%20Scripts/Intune/automate-w10-w11-devicegroups.ps1"
 
 
 ###############################################################################################################

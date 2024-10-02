@@ -1215,7 +1215,7 @@ if ($answer.value -eq 6) {
     $templateFilePath = "armTemplateWinSIG.json"
     
     Invoke-WebRequest `
-       -Uri "https://raw.githubusercontent.com/andrew-s-taylor/public/main/Powershell%20Scripts/AVD/avd-custom.json" `
+       -Uri "https://raw.githubusercontent.com/mpejga/andrew-s-taylor-public/deployment/Powershell%20Scripts/AVD/avd-custom.json" `
        -OutFile $templateFilePath `
        -UseBasicParsing `
        -Headers @{"Cache-Control"="no-cache"}
