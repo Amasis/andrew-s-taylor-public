@@ -17,7 +17,7 @@
 .OUTPUTS
 C:\ProgramData\Debloat\Debloat.log
 .NOTES
-  Version:        5.0.28
+  Version:        5.1.6
   Author:         Andrew Taylor
   Twitter:        @AndrewTaylor_2
   WWW:            andrewstaylor.com
@@ -120,6 +120,17 @@ C:\ProgramData\Debloat\Debloat.log
   Change 18/09/2024 - Removed ODT for office removal to speed up script
   Change 24/09/2024 - Fixed uninstall for HP Wolf Security
   Change 25/09/2024 - Removed locales as Teams is now combined
+  Change 08/10/2024 - ODT Fix
+  Change 04/11/2024 - Block games in search bar
+  Change 03/12/2024 - Fix for HP AppxPackage Removal
+  Change 10/12/2024 - Added registry keys to not display screens during OOBE when using Device prep (thanks Rudy)
+  Change 07/01/2025 - Added spotlight removal keys
+  Change 10/01/2025 - Added Lenovo Now
+  Change 21/01/2025 - Edge Surf game fix
+  Change 27/01/2025 - Added Logitech Download assistant
+  Change 27/01/2025 - Converted from CRLF to LF
+  Change 06/02/2025 - Added the t back to transcrip(t)
+  Change 10/02/2025 - Fixed logic for Logitech Registry key
 N/A
 #>
 
@@ -543,6 +554,14 @@ foreach ($sid in $UserSIDs) {
     Set-ItemProperty $Period PeriodInNanoSeconds -Value 0
 }
 
+##Disables games from showing in Search bar
+write-output "Adding Registry key to stop games from search bar"
+$registryPath = "HKLM:\	SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+If (!(Test-Path $registryPath)) {
+    New-Item $registryPath
+}
+Set-ItemProperty $registryPath EnableDynamicContentInWSB -Value 0
+
 #Prevents bloatware applications from returning and removes Start Menu suggestions
 write-output "Adding Registry key to prevent bloatware apps from returning"
 $registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
@@ -736,6 +755,31 @@ else {
 
 ##Kill Cortana again
 Get-AppxPackage Microsoft.549981C3F5F10 -allusers | Remove-AppxPackage
+
+
+
+############################################################################################################
+#                                   Disable unwanted OOBE screens for Device Prep                          #
+#                                                                                                          #
+############################################################################################################
+
+$registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE"
+$registryPath2 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
+$Name1 = "DisablePrivacyExperience"
+$Name2 = "DisableVoice"
+$Name3 = "PrivacyConsentStatus"
+$Name4 = "Protectyourpc"
+$Name5 = "HideEULAPage"
+$Name6 = "EnableFirstLogonAnimation"
+New-ItemProperty -Path $registryPath -Name $name1 -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $registryPath -Name $name2 -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $registryPath -Name $name3 -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $registryPath -Name $name4 -Value 3 -PropertyType DWord -Force
+New-ItemProperty -Path $registryPath -Name $name5 -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $registryPath2 -Name $name6 -Value 1 -PropertyType DWord -Force
+
+
+
 ############################################################################################################
 #                                        Remove Learn about this picture                                   #
 #                                                                                                          #
@@ -769,6 +813,43 @@ If (Test-Path $consumer) {
     Set-ItemProperty $consumer -Name "DisableWindowsConsumerFeatures" -Value 1
 }
 
+
+############################################################################################################
+#                                                   Disable Spotlight                                      #
+#                                                                                                          #
+############################################################################################################
+
+write-output "Disabling Windows Spotlight on lockscreen"
+$spotlight = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'
+If (Test-Path $spotlight) {
+    Set-ItemProperty $spotlight -Name "RotatingLockScreenOverlayEnabled" -Value 0
+    Set-ItemProperty $spotlight -Name "RotatingLockScreenEnabled" -Value 0
+}
+
+##Loop through users and do the same
+foreach ($sid in $UserSIDs) {
+    $spotlight = "Registry::HKU\$sid\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+    If (Test-Path $spotlight) {
+        Set-ItemProperty $spotlight -Name "RotatingLockScreenOverlayEnabled" -Value 0
+        Set-ItemProperty $spotlight -Name "RotatingLockScreenEnabled" -Value 0
+    }
+}
+
+write-output "Disabling Windows Spotlight on background"
+$spotlight = 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent'
+If (Test-Path $spotlight) {
+    Set-ItemProperty $spotlight -Name "DisableSpotlightCollectionOnDesktop" -Value 1
+    Set-ItemProperty $spotlight -Name "DisableWindowsSpotlightFeatures" -Value 1
+}
+
+##Loop through users and do the same
+foreach ($sid in $UserSIDs) {
+    $spotlight = "Registry::HKU\$sid\Software\Policies\Microsoft\Windows\CloudContent"
+    If (Test-Path $spotlight) {
+        Set-ItemProperty $spotlight -Name "DisableSpotlightCollectionOnDesktop" -Value 1
+        Set-ItemProperty $spotlight -Name "DisableWindowsSpotlightFeatures" -Value 1
+    }
+}
 
 ############################################################################################################
 #                                        Remove Scheduled Tasks                                            #
@@ -1100,11 +1181,32 @@ Remove-Item C:\Windows\Temp\SetACL.exe -recurse
 #                                        Disable Edge Surf Game                                            #
 #                                                                                                          #
 ############################################################################################################
-$surf = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge"
+$surf = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
 If (!(Test-Path $surf)) {
     New-Item $surf
 }
 New-ItemProperty -Path $surf -Name 'AllowSurfGame' -Value 0 -PropertyType DWord
+
+
+############################################################################################################
+#                                       Remove Logitech Download Assistant                                 #
+#                                                                                                          #
+############################################################################################################
+$logi = "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+If ((Get-ItemProperty $logi).PSObject.Properties.Name -contains 'Logitech Download Assistant') {
+    # Delete the key
+    Remove-ItemProperty -Path $logi -Name 'Logitech Download Assistant'
+    Write-Output 'Logitech Download Assistant Registry key removed.'
+}
+
+##Remove the dll
+$logidll = "C:\Windows\System32\LogiLDA.dll"
+if (Test-Path $logidll) {
+    Remove-Item $logidll -Force
+    Write-Output "Logitech Download Assistant DLL removed."
+} else {
+    Write-Output "Logitech Download Assistant DLL not found."
+}
 
 ############################################################################################################
 #                                       Grab all Uninstall Strings                                         #
@@ -1322,6 +1424,9 @@ if ($manufacturer -like "*HP*") {
         "HP Wolf Security - Console"
         "HP Wolf Security Application Support for Chrome 122.0.6261.139"
         "Windows Driver Package - HP Inc. sselam_4_4_2_453 AntiVirus  (11/01/2022 4.4.2.453)"
+        "HP Insights"
+        "HP Insights Analytics"
+        "HP Insights Analytics - Dependencies"
     )
 
 
@@ -1345,7 +1450,7 @@ if ($manufacturer -like "*HP*") {
             write-output "Provisioned package for $app not found."
         }
 
-        if (Get-AppxPackage -Name $app -ErrorAction SilentlyContinue) {
+        if (Get-AppxPackage -allusers -Name $app -ErrorAction SilentlyContinue) {
             Get-AppxPackage -allusers -Name $app | Remove-AppxPackage -AllUsers
             write-output "Removed $app."
         }
@@ -1394,7 +1499,7 @@ if (test-path -Path 'C:\Program Files\HP\Z By HP Data Science Stack Manager\Unin
     if (Test-Path -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\TCO Certified.lnk" -PathType Leaf) { Remove-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\TCO Certified.lnk" -Force }
     if (Test-Path -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Booking.com.lnk" -PathType Leaf) { Remove-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Booking.com.lnk" -Force }
     if (Test-Path -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Adobe offers.lnk" -PathType Leaf) { Remove-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Adobe offers.lnk" -Force }
-
+    if (Test-Path -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Miro Offer.lnk" -PathType Leaf) { Remove-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Miro offer.lnk" -Force }
 
     ##Remove Wolf Security
     wmic product where "name='HP Wolf Security'" call uninstall
@@ -1465,7 +1570,7 @@ if ($manufacturer -like "*Dell*") {
             write-output "Provisioned package for $app not found."
         }
 
-        if (Get-AppxPackage -Name $app -ErrorAction SilentlyContinue) {
+        if (Get-AppxPackage -allusers -Name $app -ErrorAction SilentlyContinue) {
             Get-AppxPackage -allusers -Name $app | Remove-AppxPackage -AllUsers
             write-output "Removed $app."
         }
@@ -1571,7 +1676,6 @@ if ($manufacturer -like "*Dell*") {
 if ($manufacturer -like "Lenovo") {
     write-output "Lenovo detected"
 
-    #Remove HP bloat
 
     ##Lenovo Specific
     # Function to uninstall applications with .exe uninstall strings
@@ -1655,7 +1759,7 @@ if ($manufacturer -like "Lenovo") {
             write-output "Provisioned package for $app not found."
         }
 
-        if (Get-AppxPackage -Name $app -ErrorAction SilentlyContinue) {
+        if (Get-AppxPackage -allusers -Name $app -ErrorAction SilentlyContinue) {
             Get-AppxPackage -allusers -Name $app | Remove-AppxPackage -AllUsers
             write-output "Removed $app."
         }
@@ -1714,6 +1818,15 @@ if ($manufacturer -like "Lenovo") {
     if (test-path -Path $path) {
         Start-Process -FilePath $path -ArgumentList $params -Wait
     }
+
+
+        # Uninstall Lenovo Now
+        $path = 'C:\Program Files (x86)\Lenovo\LenovoNow\unins000.exe'
+        $params = "/SILENT"
+        if (test-path -Path $path) {
+            Start-Process -FilePath $path -ArgumentList $params -Wait
+        }
+
     # Uninstall Lenovo Vantage
     $pathname = (Get-ChildItem -Path "C:\Program Files (x86)\Lenovo\VantageService").name
     $path = "C:\Program Files (x86)\Lenovo\VantageService\$pathname\Uninstall.exe"
@@ -2041,15 +2154,15 @@ $xml = @"
 "@
 
 ##write XML to the debloat folder
-#$xml | Out-File -FilePath "C:\ProgramData\Debloat\o365.xml"
+$xml | Out-File -FilePath "C:\ProgramData\Debloat\o365.xml"
 
 ##Download the ODT
 $odturl = "https://github.com/mpejga/andrew-s-taylor-public/raw/deployment/De-Bloat/odt.exe"
 $odtdestination = "C:\ProgramData\Debloat\odt.exe"
-#Invoke-WebRequest -Uri $odturl -OutFile $odtdestination -Method Get -UseBasicParsing
+Invoke-WebRequest -Uri $odturl -OutFile $odtdestination -Method Get -UseBasicParsing
 
 ##Run it
-#Start-Process -FilePath "C:\ProgramData\Debloat\odt.exe" -ArgumentList "/configure C:\ProgramData\Debloat\o365.xml" -Wait
+Start-Process -FilePath "C:\ProgramData\Debloat\odt.exe" -ArgumentList "/configure C:\ProgramData\Debloat\o365.xml" -Wait
 
 }
 else {
@@ -2060,13 +2173,12 @@ else {
 
 write-output "Completed"
 
-Stop-Transcript
-
+Stop-Transcri
 # SIG # Begin signature block
-# MIIoGQYJKoZIhvcNAQcCoIIoCjCCKAYCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIoEwYJKoZIhvcNAQcCoIIoBDCCKAACAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDxMNniF07dmGDC
-# v2UgIPj3QoeyN0RM9N27XxM8fXyAoqCCIRwwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCC6NIICxk4KVPxD
+# BtZyHEoCwumJ625Aq07K5xLNz5OmdKCCIRYwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -2167,114 +2279,114 @@ Stop-Transcript
 # Oj9FpsToFpFSi0HASIRLlk2rREDjjfAVKM7t8RhWByovEMQMCGQ8M4+uKIw8y4+I
 # Cw2/O/TOHnuO77Xry7fwdxPm5yg/rBKupS8ibEH5glwVZsxsDsrFhsP2JjMMB0ug
 # 0wcCampAMEhLNKhRILutG4UI4lkNbcoFUCvqShyepf2gpx8GdOfy1lKQ/a+FSCH5
-# Vzu0nAPthkX0tGFuv2jiJmCG6sivqf6UHedjGzqGVnhOMIIGwjCCBKqgAwIBAgIQ
-# BUSv85SdCDmmv9s/X+VhFjANBgkqhkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEX
+# Vzu0nAPthkX0tGFuv2jiJmCG6sivqf6UHedjGzqGVnhOMIIGvDCCBKSgAwIBAgIQ
+# C65mvFq6f5WHxvnpBOMzBDANBgkqhkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEX
 # MBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0
-# ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBMB4XDTIzMDcxNDAw
-# MDAwMFoXDTM0MTAxMzIzNTk1OVowSDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRp
-# Z2lDZXJ0LCBJbmMuMSAwHgYDVQQDExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMzCC
-# AiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAKNTRYcdg45brD5UsyPgz5/X
-# 5dLnXaEOCdwvSKOXejsqnGfcYhVYwamTEafNqrJq3RApih5iY2nTWJw1cb86l+uU
-# UI8cIOrHmjsvlmbjaedp/lvD1isgHMGXlLSlUIHyz8sHpjBoyoNC2vx/CSSUpIIa
-# 2mq62DvKXd4ZGIX7ReoNYWyd/nFexAaaPPDFLnkPG2ZS48jWPl/aQ9OE9dDH9kgt
-# XkV1lnX+3RChG4PBuOZSlbVH13gpOWvgeFmX40QrStWVzu8IF+qCZE3/I+PKhu60
-# pCFkcOvV5aDaY7Mu6QXuqvYk9R28mxyyt1/f8O52fTGZZUdVnUokL6wrl76f5P17
-# cz4y7lI0+9S769SgLDSb495uZBkHNwGRDxy1Uc2qTGaDiGhiu7xBG3gZbeTZD+BY
-# QfvYsSzhUa+0rRUGFOpiCBPTaR58ZE2dD9/O0V6MqqtQFcmzyrzXxDtoRKOlO0L9
-# c33u3Qr/eTQQfqZcClhMAD6FaXXHg2TWdc2PEnZWpST618RrIbroHzSYLzrqawGw
-# 9/sqhux7UjipmAmhcbJsca8+uG+W1eEQE/5hRwqM/vC2x9XH3mwk8L9CgsqgcT2c
-# kpMEtGlwJw1Pt7U20clfCKRwo+wK8REuZODLIivK8SgTIUlRfgZm0zu++uuRONhR
-# B8qUt+JQofM604qDy0B7AgMBAAGjggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYD
-# VR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgG
-# BmeBDAEEAjALBglghkgBhv1sBwEwHwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxq
-# II+eyG8wHQYDVR0OBBYEFKW27xPn783QZKHVVqllMaPe1eNJMFoGA1UdHwRTMFEw
-# T6BNoEuGSWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRH
-# NFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGD
-# MIGAMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYB
-# BQUHMAKGTGh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0
-# ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQEL
-# BQADggIBAIEa1t6gqbWYF7xwjU+KPGic2CX/yyzkzepdIpLsjCICqbjPgKjZ5+PF
-# 7SaCinEvGN1Ott5s1+FgnCvt7T1IjrhrunxdvcJhN2hJd6PrkKoS1yeF844ektrC
-# QDifXcigLiV4JZ0qBXqEKZi2V3mP2yZWK7Dzp703DNiYdk9WuVLCtp04qYHnbUFc
-# jGnRuSvExnvPnPp44pMadqJpddNQ5EQSviANnqlE0PjlSXcIWiHFtM+YlRpUurm8
-# wWkZus8W8oM3NG6wQSbd3lqXTzON1I13fXVFoaVYJmoDRd7ZULVQjK9WvUzF4UbF
-# KNOt50MAcN7MmJ4ZiQPq1JE3701S88lgIcRWR+3aEUuMMsOI5ljitts++V+wQtaP
-# 4xeR0arAVeOGv6wnLEHQmjNKqDbUuXKWfpd5OEhfysLcPTLfddY2Z1qJ+Panx+VP
-# NTwAvb6cKmx5AdzaROY63jg7B145WPR8czFVoIARyxQMfq68/qTreWWqaNYiyjvr
-# moI1VygWy2nyMpqy0tg6uLFGhmu6F/3Ed2wVbK6rr3M66ElGt9V/zLY4wNjsHPW2
-# obhDLN9OTH0eaHDAdwrUAuBcYLso/zjlUlrWrBciI0707NMX+1Br/wd3H3GXREHJ
-# uEbTbDJ8WC9nR2XlG3O2mflrLAZG70Ee8PBf4NvZrZCARK+AEEGKMIIHWzCCBUOg
-# AwIBAgIQCLGfzbPa87AxVVgIAS8A6TANBgkqhkiG9w0BAQsFADBpMQswCQYDVQQG
-# EwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0
-# IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0Ex
-# MB4XDTIzMTExNTAwMDAwMFoXDTI2MTExNzIzNTk1OVowYzELMAkGA1UEBhMCR0Ix
-# FDASBgNVBAcTC1doaXRsZXkgQmF5MR4wHAYDVQQKExVBTkRSRVdTVEFZTE9SLkNP
-# TSBMVEQxHjAcBgNVBAMTFUFORFJFV1NUQVlMT1IuQ09NIExURDCCAiIwDQYJKoZI
-# hvcNAQEBBQADggIPADCCAgoCggIBAMOkYkLpzNH4Y1gUXF799uF0CrwW/Lme676+
-# C9aZOJYzpq3/DIa81oWv9b4b0WwLpJVu0fOkAmxI6ocu4uf613jDMW0GfV4dRodu
-# tryfuDuit4rndvJA6DIs0YG5xNlKTkY8AIvBP3IwEzUD1f57J5GiAprHGeoc4Utt
-# zEuGA3ySqlsGEg0gCehWJznUkh3yM8XbksC0LuBmnY/dZJ/8ktCwCd38gfZEO9UD
-# DSkie4VTY3T7VFbTiaH0bw+AvfcQVy2CSwkwfnkfYagSFkKar+MYwu7gqVXxrh3V
-# /Gjval6PdM0A7EcTqmzrCRtvkWIR6bpz+3AIH6Fr6yTuG3XiLIL6sK/iF/9d4U2P
-# iH1vJ/xfdhGj0rQ3/NBRsUBC3l1w41L5q9UX1Oh1lT1OuJ6hV/uank6JY3jpm+Of
-# Z7YCTF2Hkz5y6h9T7sY0LTi68Vmtxa/EgEtG6JVNVsqP7WwEkQRxu/30qtjyoX8n
-# zSuF7TmsRgmZ1SB+ISclejuqTNdhcycDhi3/IISgVJNRS/F6Z+VQGf3fh6ObdQLV
-# woT0JnJjbD8PzJ12OoKgViTQhndaZbkfpiVifJ1uzWJrTW5wErH+qvutHVt4/sEZ
-# AVS4PNfOcJXR0s0/L5JHkjtM4aGl62fAHjHj9JsClusj47cT6jROIqQI4ejz1slO
-# oclOetCNAgMBAAGjggIDMIIB/zAfBgNVHSMEGDAWgBRoN+Drtjv4XxGG+/5hewiI
-# ZfROQjAdBgNVHQ4EFgQU0HdOFfPxa9Yeb5O5J9UEiJkrK98wPgYDVR0gBDcwNTAz
-# BgZngQwBBAEwKTAnBggrBgEFBQcCARYbaHR0cDovL3d3dy5kaWdpY2VydC5jb20v
-# Q1BTMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzCBtQYDVR0f
-# BIGtMIGqMFOgUaBPhk1odHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRU
-# cnVzdGVkRzRDb2RlU2lnbmluZ1JTQTQwOTZTSEEzODQyMDIxQ0ExLmNybDBToFGg
-# T4ZNaHR0cDovL2NybDQuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29k
-# ZVNpZ25pbmdSU0E0MDk2U0hBMzg0MjAyMUNBMS5jcmwwgZQGCCsGAQUFBwEBBIGH
-# MIGEMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wXAYIKwYB
-# BQUHMAKGUGh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0
-# ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIwMjFDQTEuY3J0MAkGA1UdEwQC
-# MAAwDQYJKoZIhvcNAQELBQADggIBAEkRh2PwMiyravr66Zww6Pjl24KzDcGYMSxU
-# KOEU4bykcOKgvS6V2zeZIs0D/oqct3hBKTGESSQWSA/Jkr1EMC04qJHO/Twr/sBD
-# CDBMtJ9XAtO75J+oqDccM+g8Po+jjhqYJzKvbisVUvdsPqFll55vSzRvHGAA6hjy
-# DyakGLROcNaSFZGdgOK2AMhQ8EULrE8Riri3D1ROuqGmUWKqcO9aqPHBf5wUwia8
-# g980sTXquO5g4TWkZqSvwt1BHMmu69MR6loRAK17HvFcSicK6Pm0zid1KS2z4ntG
-# B4Cfcg88aFLog3ciP2tfMi2xTnqN1K+YmU894Pl1lCp1xFvT6prm10Bs6BViKXfD
-# fVFxXTB0mHoDNqGi/B8+rxf2z7u5foXPCzBYT+Q3cxtopvZtk29MpTY88GHDVJsF
-# MBjX7zM6aCNKsTKC2jb92F+jlkc8clCQQnl3U4jqwbj4ur1JBP5QxQprWhwde0+M
-# ifDVp0vHZsVZ0pnYMCKSG5bUr3wOU7EP321DwvvEsTjCy/XDgvy8ipU6w3GjcQQF
-# mgp/BX/0JCHX+04QJ0JkR9TTFZR1B+zh3CcK1ZEtTtvuZfjQ3viXwlwtNLy43vbe
-# 1J5WNTs0HjJXsfdbhY5kE5RhyfaxFBr21KYx+b+evYyolIS0wR6New6FqLgcc4Ge
-# 94yaYVTqMYIGUzCCBk8CAQEwfTBpMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGln
-# aUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBT
-# aWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhAIsZ/Ns9rzsDFVWAgBLwDp
-# MA0GCWCGSAFlAwQCAQUAoIGEMBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJ
-# KoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQB
-# gjcCARUwLwYJKoZIhvcNAQkEMSIEIHuZjVzfTwafqPVGNQvSRF00ELlw64sFzVTB
-# iwtZgDPTMA0GCSqGSIb3DQEBAQUABIICAF87x0zsg/QXMsVbyceQkV0SEuNMFjKP
-# cidOM6xXEhOJkT1XTGWASrVV57pMXxynGT0Ve55tuNGQUqpzjrbb3QQbqvMB+J3i
-# iaEZBTEqd5oPzVYbhqaelo+agwY+bS0rC2CaJXAxcyMaTFS1VC0AxDA43KHy7L6b
-# kDAmPjTO32lY90Fp8PVsRn2ag9Zzu0ma0DjYHpqpxPzIH0VBP/BGHZ7Q9mNxBVpe
-# L191fRj2jX2AbOXTjVtMjba0cuGyjrhU2n9QNzRXiV0De6wysX4k3yla+Rx/JHXB
-# HQ9SWXiVnkYiolJYeOhimK5ikFSTkU+qs+8JzTRkbkvfz2F5KJGfp6RDkBp28Dl8
-# QDTAl2W18w4i6jgkRp1xRhetKOmjIAZX4vmG1fFUiv3x43+/XirndLI9JLBhkWLs
-# fvpY2M2T0vCHdYWYEPnRSOJtFw7tZJdyvJ7DZclapghielAtz+NylWO4Kr+hg4Ll
-# xcsv9Oc33Gj+HbhzgetQLUYbJ/KQ0MzD+YTuDSTwRt0kZ1SihnbfObx4FEvFTjJc
-# IoxPEaBVHG5MIPblFpmWYCoGeQq/8aL6Rg4yK37Yit2mL20WeSwWGdOG/FgrsmQh
-# 5Bv2YPH2uc8ALYZqAemat0h04NGhCi49vEwXBW8kuiLwDrgVgqgQeWg9b5rLh3Fw
-# gDxaXhhjnr8CoYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkG
-# A1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdp
-# Q2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQ
-# BUSv85SdCDmmv9s/X+VhFjANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzEL
-# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI0MDkyNTE1MTMzNVowLwYJKoZI
-# hvcNAQkEMSIEIOX9PB1/CaJBiucxEjktubLW5R8KurKCmmCaUggicV2UMA0GCSqG
-# SIb3DQEBAQUABIICAIM4a9ovChhptSZnQUqUbkPjpeoFQt3YEwa8Dpu32htc4aIk
-# J25evob391j7hn8CLtNPlCG2RYgpjAzXCw+v9QgSNFsoE2bqg8LI6Y4hTUXMFTJZ
-# XK7IWGJGXKm0COHsGUDCebGs554oCQSU1FoBCtJ59ylYgqCvemV6CSVSg1K0YoJk
-# KUHWNq4MekRQxRnnvwANuYHn2evo4ey4QImAzlYEIfFvo9e0qMl3TL9YDv4hhFpm
-# 0cy87/qBdrD35wJaXorbZ+pIX7OXik06QeJ1aXBZmBFZ3GAkFCeJSygDQw353Mo9
-# +PUMKkNUYMTqkUbb1P2BB7tXrboFUb1tUnlyS9tNgAKXBeD20jg66KV6TBpQEpW0
-# b/ja8AQf9HzYRx49Yi7EQFkr/r62jAyhd9rKXaH8Gi+twcXnW5woBp5NkCqgXgmO
-# DLc+R9UusIPwYEFiv+buAbcB6I5ryQkuB/KlC4ukkzdWpHV+wth5F0Z2suYMoqxx
-# j0SKD1f+0jV8YN+U8W+m2M5TRBGcQoPo7IsYt8AIQRzu6wZw8nyQYgPpPbHf26Su
-# y1+8SSam8kPQdK0L/VITORyYsjzujXM1zNDtwqOY4qlQSSKN/s2uky/9IJFmGsu8
-# dO/cg6EbVU0Zb9dzdcPI/DENK5/KpJ1zHukcVLaRLQRHq1bBz/ty5aOf6TkN
+# ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBMB4XDTI0MDkyNjAw
+# MDAwMFoXDTM1MTEyNTIzNTk1OVowQjELMAkGA1UEBhMCVVMxETAPBgNVBAoTCERp
+# Z2lDZXJ0MSAwHgYDVQQDExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyNDCCAiIwDQYJ
+# KoZIhvcNAQEBBQADggIPADCCAgoCggIBAL5qc5/2lSGrljC6W23mWaO16P2RHxjE
+# iDtqmeOlwf0KMCBDEr4IxHRGd7+L660x5XltSVhhK64zi9CeC9B6lUdXM0s71EOc
+# Re8+CEJp+3R2O8oo76EO7o5tLuslxdr9Qq82aKcpA9O//X6QE+AcaU/byaCagLD/
+# GLoUb35SfWHh43rOH3bpLEx7pZ7avVnpUVmPvkxT8c2a2yC0WMp8hMu60tZR0Cha
+# V76Nhnj37DEYTX9ReNZ8hIOYe4jl7/r419CvEYVIrH6sN00yx49boUuumF9i2T8U
+# uKGn9966fR5X6kgXj3o5WHhHVO+NBikDO0mlUh902wS/Eeh8F/UFaRp1z5SnROHw
+# SJ+QQRZ1fisD8UTVDSupWJNstVkiqLq+ISTdEjJKGjVfIcsgA4l9cbk8Smlzddh4
+# EfvFrpVNnes4c16Jidj5XiPVdsn5n10jxmGpxoMc6iPkoaDhi6JjHd5ibfdp5uzI
+# Xp4P0wXkgNs+CO/CacBqU0R4k+8h6gYldp4FCMgrXdKWfM4N0u25OEAuEa3Jyidx
+# W48jwBqIJqImd93NRxvd1aepSeNeREXAu2xUDEW8aqzFQDYmr9ZONuc2MhTMizch
+# NULpUEoA6Vva7b1XCB+1rxvbKmLqfY/M/SdV6mwWTyeVy5Z/JkvMFpnQy5wR14GJ
+# cv6dQ4aEKOX5AgMBAAGjggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/
+# BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEE
+# AjALBglghkgBhv1sBwEwHwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8w
+# HQYDVR0OBBYEFJ9XLAN3DigVkGalY17uT5IfdqBbMFoGA1UdHwRTMFEwT6BNoEuG
+# SWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQw
+# OTZTSEEyNTZUaW1lU3RhbXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQG
+# CCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKG
+# TGh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJT
+# QTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIB
+# AD2tHh92mVvjOIQSR9lDkfYR25tOCB3RKE/P09x7gUsmXqt40ouRl3lj+8QioVYq
+# 3igpwrPvBmZdrlWBb0HvqT00nFSXgmUrDKNSQqGTdpjHsPy+LaalTW0qVjvUBhcH
+# zBMutB6HzeledbDCzFzUy34VarPnvIWrqVogK0qM8gJhh/+qDEAIdO/KkYesLyTV
+# OoJ4eTq7gj9UFAL1UruJKlTnCVaM2UeUUW/8z3fvjxhN6hdT98Vr2FYlCS7Mbb4H
+# v5swO+aAXxWUm3WpByXtgVQxiBlTVYzqfLDbe9PpBKDBfk+rabTFDZXoUke7zPgt
+# d7/fvWTlCs30VAGEsshJmLbJ6ZbQ/xll/HjO9JbNVekBv2Tgem+mLptR7yIrpaid
+# RJXrI+UzB6vAlk/8a1u7cIqV0yef4uaZFORNekUgQHTqddmsPCEIYQP7xGxZBIhd
+# mm4bhYsVA6G2WgNFYagLDBzpmk9104WQzYuVNsxyoVLObhx3RugaEGru+SojW4dH
+# PoWrUhftNpFC5H7QEY7MhKRyrBe7ucykW7eaCuWBsBb4HOKRFVDcrZgdwaSIqMDi
+# CLg4D+TPVgKx2EgEdeoHNHT9l3ZDBD+XgbF+23/zBjeCtxz+dL/9NWR6P2eZRi7z
+# cEO1xwcdcqJsyz/JceENc2Sg8h3KeFUCS7tpFk7CrDqkMIIHWzCCBUOgAwIBAgIQ
+# CLGfzbPa87AxVVgIAS8A6TANBgkqhkiG9w0BAQsFADBpMQswCQYDVQQGEwJVUzEX
+# MBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0IFRydXN0
+# ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExMB4XDTIz
+# MTExNTAwMDAwMFoXDTI2MTExNzIzNTk1OVowYzELMAkGA1UEBhMCR0IxFDASBgNV
+# BAcTC1doaXRsZXkgQmF5MR4wHAYDVQQKExVBTkRSRVdTVEFZTE9SLkNPTSBMVEQx
+# HjAcBgNVBAMTFUFORFJFV1NUQVlMT1IuQ09NIExURDCCAiIwDQYJKoZIhvcNAQEB
+# BQADggIPADCCAgoCggIBAMOkYkLpzNH4Y1gUXF799uF0CrwW/Lme676+C9aZOJYz
+# pq3/DIa81oWv9b4b0WwLpJVu0fOkAmxI6ocu4uf613jDMW0GfV4dRodutryfuDui
+# t4rndvJA6DIs0YG5xNlKTkY8AIvBP3IwEzUD1f57J5GiAprHGeoc4UttzEuGA3yS
+# qlsGEg0gCehWJznUkh3yM8XbksC0LuBmnY/dZJ/8ktCwCd38gfZEO9UDDSkie4VT
+# Y3T7VFbTiaH0bw+AvfcQVy2CSwkwfnkfYagSFkKar+MYwu7gqVXxrh3V/Gjval6P
+# dM0A7EcTqmzrCRtvkWIR6bpz+3AIH6Fr6yTuG3XiLIL6sK/iF/9d4U2PiH1vJ/xf
+# dhGj0rQ3/NBRsUBC3l1w41L5q9UX1Oh1lT1OuJ6hV/uank6JY3jpm+OfZ7YCTF2H
+# kz5y6h9T7sY0LTi68Vmtxa/EgEtG6JVNVsqP7WwEkQRxu/30qtjyoX8nzSuF7Tms
+# RgmZ1SB+ISclejuqTNdhcycDhi3/IISgVJNRS/F6Z+VQGf3fh6ObdQLVwoT0JnJj
+# bD8PzJ12OoKgViTQhndaZbkfpiVifJ1uzWJrTW5wErH+qvutHVt4/sEZAVS4PNfO
+# cJXR0s0/L5JHkjtM4aGl62fAHjHj9JsClusj47cT6jROIqQI4ejz1slOoclOetCN
+# AgMBAAGjggIDMIIB/zAfBgNVHSMEGDAWgBRoN+Drtjv4XxGG+/5hewiIZfROQjAd
+# BgNVHQ4EFgQU0HdOFfPxa9Yeb5O5J9UEiJkrK98wPgYDVR0gBDcwNTAzBgZngQwB
+# BAEwKTAnBggrBgEFBQcCARYbaHR0cDovL3d3dy5kaWdpY2VydC5jb20vQ1BTMA4G
+# A1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzCBtQYDVR0fBIGtMIGq
+# MFOgUaBPhk1odHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVk
+# RzRDb2RlU2lnbmluZ1JTQTQwOTZTSEEzODQyMDIxQ0ExLmNybDBToFGgT4ZNaHR0
+# cDovL2NybDQuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25p
+# bmdSU0E0MDk2U0hBMzg0MjAyMUNBMS5jcmwwgZQGCCsGAQUFBwEBBIGHMIGEMCQG
+# CCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wXAYIKwYBBQUHMAKG
+# UGh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNENv
+# ZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIwMjFDQTEuY3J0MAkGA1UdEwQCMAAwDQYJ
+# KoZIhvcNAQELBQADggIBAEkRh2PwMiyravr66Zww6Pjl24KzDcGYMSxUKOEU4byk
+# cOKgvS6V2zeZIs0D/oqct3hBKTGESSQWSA/Jkr1EMC04qJHO/Twr/sBDCDBMtJ9X
+# AtO75J+oqDccM+g8Po+jjhqYJzKvbisVUvdsPqFll55vSzRvHGAA6hjyDyakGLRO
+# cNaSFZGdgOK2AMhQ8EULrE8Riri3D1ROuqGmUWKqcO9aqPHBf5wUwia8g980sTXq
+# uO5g4TWkZqSvwt1BHMmu69MR6loRAK17HvFcSicK6Pm0zid1KS2z4ntGB4Cfcg88
+# aFLog3ciP2tfMi2xTnqN1K+YmU894Pl1lCp1xFvT6prm10Bs6BViKXfDfVFxXTB0
+# mHoDNqGi/B8+rxf2z7u5foXPCzBYT+Q3cxtopvZtk29MpTY88GHDVJsFMBjX7zM6
+# aCNKsTKC2jb92F+jlkc8clCQQnl3U4jqwbj4ur1JBP5QxQprWhwde0+MifDVp0vH
+# ZsVZ0pnYMCKSG5bUr3wOU7EP321DwvvEsTjCy/XDgvy8ipU6w3GjcQQFmgp/BX/0
+# JCHX+04QJ0JkR9TTFZR1B+zh3CcK1ZEtTtvuZfjQ3viXwlwtNLy43vbe1J5WNTs0
+# HjJXsfdbhY5kE5RhyfaxFBr21KYx+b+evYyolIS0wR6New6FqLgcc4Ge94yaYVTq
+# MYIGUzCCBk8CAQEwfTBpMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQs
+# IEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5n
+# IFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhAIsZ/Ns9rzsDFVWAgBLwDpMA0GCWCG
+# SAFlAwQCAQUAoIGEMBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcN
+# AQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUw
+# LwYJKoZIhvcNAQkEMSIEID23MYAsz8X9fc6+SaVO7VBf6gVAe//p2DW6yPvcevVc
+# MA0GCSqGSIb3DQEBAQUABIICAEP9yyDXmRVvYCKVGwKBww9+fHbjymTpGsaK9eLW
+# /Aw4gDrhB75CUxizu7uIEdPg7hADPjF1D2ganGJDzl/rC1xig+/wIQZYAtsV/uHt
+# DrRAqXaY0XvG+RLYVAIb57aw9FaX+fJtyy7tLSYqWxf0FM3fkDVvBbmnJsxOyr/C
+# oYUyVDy5+Giq9DjabZYTNIWS+PeNSLPLU7ekGd9Mnt46KPZzvi+seJ3dtHDFi6pr
+# nz7yjRNNAltEArIk13tZrPhZPmxApqasld1ajCx8WDpWajJagh1tPz18UAuU2KCC
+# m7rPCYjfwRu0Fg92XvAqtoOPA7zZke0mw5IAryhtkncbu4EAQawxwIaD4DG5tQKA
+# qk5ZHnGeiCUPGwfP5qzFpKkwqK5S0GVHiLHS22t+0je8v7EhrE5weXf8CKDDc7N8
+# WsM8pCctJvWkVhzvdWX9DvWIeSKOpa7QA884ymO3QbakDLuPWunnp0QjCt7swFHM
+# 6cFcMZh30Z37J8yMkww4rY0PMbT9NTOZpTcO/V+Ea82iV7PvLO8z5gJDMrEnnnFo
+# f/3CUbrkGvKWW786WJ24Fiv4f3qdGMNRo+lrNqiCrzwatsLpd3FlW8hx7AFeiBxb
+# H8c0HQ8EYQtabbTWPU67CZmwSxVCDFA6o+kz6bf8cJRaQgim03aHzPp5LsAtmr8l
+# lwdPoYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMC
+# VVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBU
+# cnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQC65mvFq6
+# f5WHxvnpBOMzBDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG
+# 9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI1MDIxMDA4NDIxNVowLwYJKoZIhvcNAQkE
+# MSIEIKVbYUCWNOWAJHfvpDJ26Av4QA9RoGIeBn9zlq/zG9btMA0GCSqGSIb3DQEB
+# AQUABIICAAi4Bkk0dNFi7vwcmDqpvz5/ZwT6A09p1EScjIj9r5eb2kEDphLXcXMU
+# SzJTKdGu7a5MIYejsl9nmfQuFxEY0kHyUSTihGiqNIIOw3TV6vK8LQPt+AhhyhHy
+# L9ITzPZRFrXEmJ0g6E4cVT/FxvcBAx0yUHgbz98KbxW+8dd2jQdJe86jssBd2f5j
+# WTzjtBXLRjObf3EYqHXba+rHkpCLNZSIRczUrpSKAReSvvIUeGng42PGdDIpqynz
+# Vk89NqsR9nCu+wWNO9r/KvRjDZ/M7RMeS7ZSRacsvYkB1Y4p+yD0YhQV72Mvzibt
+# AyMHdQQ6bR2UwHW7XQOzfCHS9oYvh4VtUg1WqmYVg17IDke6HuzZfvo4RW45xWCa
+# IFMwmG4aguqkGNFL4S8UkAv0FqKEMnDIgMMguR/F28zmPHTjFNNXgocVOm9De8ds
+# wyG6aQZg9nstozZfV1yOXkOindaIf1DeMtbuiCgLMdpcktW71EAUFI5ekCixv9vF
+# JSvciNA+TkfFUPMASjZHki8xV3SLqCWa70hlqK1XpPLG36OTzqHv7+kSmbZ3l1Tm
+# QrUR64OhEnNf3HJww/vDbNuARwQs8oOBqayhrfzVXjlLrtRqTMcp43icBdpxpHkY
+# R3wvJwNoAYg13cq2fOLyujJ/RDSvSzpQojFFnP9BJao3UrWEq3z8
 # SIG # End signature block
